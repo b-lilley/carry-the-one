@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A daily six-problem mental math puzzle with Wordle-style hints and a shortcut lesson after every problem.">
+<meta name="theme-color" content="#EEF2EC">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2316223A'/%3E%3Ctext x='16' y='24' font-family='monospace' font-size='22' font-weight='700' text-anchor='middle' fill='%23EEF2EC'%3E1%3C/text%3E%3C/svg%3E">
+<title>Carry the One</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Mono:wght@500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow column on graph paper. Ladder of six problems, the working sheet, then a calculator keypad. */
+:root{
+  --paper:#EEF2EC; --grid:#DDE5DA; --sheet:#FBFCF8; --rule:#C9D2C6;
+  --ink:#16223A; --muted:#566570; --accent:#2F4CC8;
+  --hit:#2C8A57; --near:#D29C1C; --miss:#7E8A90; --fail:#BF3F2B;
+  --on-tile:#FFFFFF; --on-near:#22190A;
+  --key:#FFFFFF; --key-edge:#BCC6BA; --overlay:rgba(22,34,58,.45);
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1418; --grid:#18212A; --sheet:#151C22; --rule:#2B363F;
+    --ink:#E4EAE6; --muted:#93A2A9; --accent:#93A6FF;
+    --hit:#36A067; --near:#D9A62C; --miss:#4B575E; --fail:#E0604A;
+    --on-tile:#FFFFFF; --on-near:#22190A;
+    --key:#1E272E; --key-edge:#080B0E; --overlay:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1418; --grid:#18212A; --sheet:#151C22; --rule:#2B363F;
+  --ink:#E4EAE6; --muted:#93A2A9; --accent:#93A6FF;
+  --hit:#36A067; --near:#D9A62C; --miss:#4B575E; --fail:#E0604A;
+  --on-tile:#FFFFFF; --on-near:#22190A;
+  --key:#1E272E; --key-edge:#080B0E; --overlay:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{
+  margin:0;-webkit-text-size-adjust:100%;
+  background-color:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:14px 24px;display:flex;flex-direction:column;gap:14px}
+
+/* Header */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{margin:0;font-family:var(--f-display);font-weight:900;font-size:34px;line-height:.9;letter-spacing:.01em;text-transform:uppercase}
+h1 .one{position:relative;display:inline-block}
+h1 .one sup{position:absolute;top:-.55em;right:-.05em;font-size:.42em;color:var(--accent);font-family:var(--f-mono);font-weight:600}
+.meta{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:6px;letter-spacing:.04em}
+.hbtns{display:flex;gap:6px}
+.ghost{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;font-size:13px;font-weight:600}
+.ghost:hover{border-color:var(--ink)}
+
+/* Mode switch */
+.modes{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--rule);border-radius:8px;padding:3px;background:var(--sheet)}
+.modes button{border:0;background:transparent;padding:7px 0;border-radius:6px;font-weight:600;color:var(--muted)}
+.modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* Ladder */
+.ladder{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:0;padding:0;list-style:none}
+.ladder button{width:100%;border:1.5px solid var(--rule);background:var(--sheet);border-radius:6px;padding:5px 0 4px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.ladder .n{font-family:var(--f-mono);font-weight:600;font-size:15px;line-height:1.2}
+.ladder .c{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ladder .cur{border-color:var(--ink)}
+.ladder .viewing{box-shadow:0 0 0 2px var(--accent)}
+.ladder .r1{background:var(--hit);border-color:var(--hit);color:var(--on-tile)}
+.ladder .r2,.ladder .r3{background:var(--near);border-color:var(--near);color:var(--on-near)}
+.ladder .r3{background:color-mix(in srgb,var(--near) 55%,var(--fail))}
+.ladder .rx{background:var(--fail);border-color:var(--fail);color:var(--on-tile)}
+.ladder .r1 .c,.ladder .rx .c{color:inherit;opacity:.85}
+.ladder .r2 .c,.ladder .r3 .c{color:inherit;opacity:.8}
+.ladder button:disabled{cursor:default}
+
+/* Sheet */
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.eyebrow{display:flex;justify-content:space-between;align-items:center;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.eyebrow .clock{font-variant-numeric:tabular-nums;color:var(--ink)}
+.expr{font-family:var(--f-display);font-weight:900;font-size:clamp(46px,13vw,66px);line-height:1;letter-spacing:.01em;text-align:center;font-variant-numeric:tabular-nums;text-wrap:balance}
+.expr .eq{color:var(--muted);font-weight:700}
+.expr .ans{color:var(--hit)}
+.expr .ans.lost{color:var(--fail)}
+.rows{display:flex;flex-direction:column;align-items:center;gap:7px}
+.row{display:flex;align-items:center;gap:6px}
+.tile{width:46px;height:52px;border:2px solid var(--rule);border-radius:6px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:600;font-size:26px;background:var(--sheet)}
+.tile.typed{border-color:var(--ink)}
+.tile.hit{background:var(--hit);border-color:var(--hit);color:var(--on-tile)}
+.tile.near{background:var(--near);border-color:var(--near);color:var(--on-near)}
+.tile.miss{background:var(--miss);border-color:var(--miss);color:var(--on-tile)}
+.dir{width:30px;font-family:var(--f-mono);font-size:12px;font-weight:600;color:var(--muted);text-align:center;line-height:1.1}
+.dir b{display:block;font-size:18px;color:var(--ink)}
+.flip .tile{animation:flip .42s ease both}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.msg{min-height:1.5em;text-align:center;font-size:14px;color:var(--muted)}
+.msg strong{color:var(--ink)}
+
+/* Shortcut card */
+.tip{border-top:1px dashed var(--rule);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.tip h3{margin:0;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.tip p{margin:0;font-size:15px;line-height:1.55}
+.tip p b{font-family:var(--f-mono);font-weight:600}
+.primary{border:0;background:var(--ink);color:var(--paper);border-radius:8px;padding:11px 16px;font-weight:600;font-size:15px}
+.primary:hover{opacity:.9}
+
+/* Done card */
+.done{display:flex;flex-direction:column;gap:12px}
+.done .big{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.done .score{font-family:var(--f-display);font-weight:900;font-size:56px;line-height:.9}
+.done .score small{font-size:.45em;color:var(--muted)}
+.done .marks{font-size:22px;letter-spacing:2px}
+.done .facts{font-family:var(--f-mono);font-size:13px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.done .facts span b{color:var(--ink);font-weight:600}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.copyfallback{width:100%;font-family:var(--f-mono);font-size:13px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);padding:8px;resize:none}
+
+/* Practice controls */
+.controls{display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--rule);background:var(--sheet);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.levels .chip{border-radius:6px}
+.sess{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-variant-numeric:tabular-nums}
+.sess div{display:flex;flex-direction:column;align-items:center}
+.sess b{font-family:var(--f-mono);font-size:17px;font-weight:600}
+.sess span{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+
+/* Keypad */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.key{height:52px;border:0;border-radius:8px;background:var(--key);box-shadow:0 2px 0 var(--key-edge),inset 0 0 0 1px var(--rule);font-family:var(--f-mono);font-weight:600;font-size:22px;touch-action:manipulation}
+.key:active{transform:translateY(2px);box-shadow:inset 0 0 0 1px var(--rule)}
+.key.hit{background:var(--hit);color:var(--on-tile);box-shadow:0 2px 0 var(--key-edge)}
+.key.near{background:var(--near);color:var(--on-near);box-shadow:0 2px 0 var(--key-edge)}
+.key.miss{background:var(--miss);color:var(--on-tile);opacity:.75;box-shadow:0 2px 0 var(--key-edge)}
+.key.wide{font-family:var(--f-body);font-size:15px}
+.key.enter{background:var(--ink);color:var(--paper)}
+
+/* Overlay */
+.overlay{position:fixed;inset:0;background:var(--overlay);display:grid;place-items:center;padding:16px;z-index:10}
+.panel{background:var(--sheet);color:var(--ink);border:1px solid var(--rule);border-radius:12px;padding:20px;width:100%;max-width:420px;max-height:88vh;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.panel h2{margin:0;font-family:var(--f-display);font-weight:900;font-size:28px;text-transform:uppercase;line-height:1}
+.panel h4{margin:0;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.panel p{margin:0}
+.panel ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.panel .head{display:flex;justify-content:space-between;align-items:center}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.statgrid b{display:block;font-family:var(--f-display);font-weight:900;font-size:32px;line-height:1}
+.statgrid span{font-size:11px;color:var(--muted);line-height:1.2;display:block;margin-top:4px}
+.dist{display:flex;flex-direction:column;gap:4px;font-family:var(--f-mono);font-size:13px}
+.dist .bar{display:grid;grid-template-columns:16px 1fr;gap:8px;align-items:center}
+.dist .fill{background:var(--miss);color:var(--on-tile);padding:1px 6px;border-radius:3px;text-align:right;min-width:22px;width:var(--w)}
+.dist .fill.today{background:var(--hit)}
+.legend{display:flex;flex-direction:column;gap:8px}
+.legend .row{justify-content:flex-start}
+.legend .tile{width:34px;height:38px;font-size:19px}
+.legend small{font-size:13.5px}
+
+@media (max-width:380px){.tile{width:40px;height:46px;font-size:22px}.key{height:48px}}
+@media (prefers-reduced-motion:reduce){.flip .tile,.shake{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+
+<script>
+(() => {
+/* ---------- utilities ---------- */
+const KEY = 'carry-the-one.v1';
+const fmt = n => n.toLocaleString('en-US');
+const gcd = (a,b) => b ? gcd(b, a % b) : a;
+const lcm = (a,b) => a / gcd(a,b) * b;
+const mmss = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function hash(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}return (h>>>0)}
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const ri = (r,a,b) => a + Math.floor(r() * (b - a + 1));
+const pick = (r,arr) => arr[Math.floor(r() * arr.length)];
+function todayKey(d = new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function dayNum(key){const [y,m,d]=key.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5)}
+const puzzleNo = key => dayNum(key) - dayNum('2026-01-01') + 1;
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) { return {}; } };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {} };
+let db = load(); db.history = db.history || {};
+
+/* ---------- problem generators ---------- */
+function placeParts(n){const s=String(n),out=[];for(let i=0;i<s.length;i++){const d=+s[i];if(d)out.push(d*10**(s.length-1-i))}return out}
+function stepwise(a,b,op){let run=a;const steps=placeParts(b).map(p=>{run=op==='+'?run+p:run-p;return `${op} ${fmt(p)} → ${fmt(run)}`});return `Start at ${fmt(a)}: ${steps.join(', ')}. Answer: <b>${fmt(run)}</b>.`}
+
+function tipAdd(a,b){const o=b%10;
+  if(b<100&&o>=6){const up=b+10-o;return `Round ${b} up to ${up}. ${fmt(a)} + ${up} = ${fmt(a+up)}, then take back the extra ${10-o}: <b>${fmt(a+b)}</b>.`}
+  return `Add ${b} one place at a time. `+stepwise(a,b,'+')}
+function tipSub(a,b){const o=b%10;
+  if(o>=6){const up=b+10-o;return `Round ${b} up to ${up}. ${fmt(a)} − ${up} = ${fmt(a-up)}, then add back the ${10-o} you over-subtracted: <b>${fmt(a-b)}</b>.`}
+  return `Subtract ${b} one place at a time. `+stepwise(a,b,'−')}
+function tipMul(split,other,splitFirst){const parts=placeParts(split);
+  const lines=parts.map(p=>splitFirst?`${fmt(p)} × ${other} = ${fmt(p*other)}`:`${other} × ${fmt(p)} = ${fmt(p*other)}`);
+  return `Split ${split} into ${parts.map(fmt).join(' + ')}. ${lines.join(', ')}. Add the pieces: <b>${fmt(split*other)}</b>.`}
+
+const PCT={1:{10:[10],20:[20],25:[25],50:[50]},2:{5:[5],15:[10,5],30:[20,10],40:[20,20],75:[50,25]},3:{12:[10,2],35:[25,10],45:[25,20],65:[50,10,5],120:[100,20]}};
+function pctLine(p,B){const v=p*B/100;return({100:`100% is the whole thing: ${fmt(v)}`,50:`50% is half: ${fmt(v)}`,25:`25% is a quarter: ${fmt(v)}`,20:`20% is a fifth, or double 10%: ${fmt(v)}`,10:`10% shifts the decimal one place: ${fmt(v)}`,5:`5% is half of 10% (${fmt(B/10)}): ${fmt(v)}`,2:`2% is double 1% (${fmt(B/100)}): ${fmt(v)}`,1:`1% is ${fmt(v)}`})[p]}
+
+const SPECIAL={
+  x5(r){const a=ri(r,12,249)*2;return{q:`${a} × 5`,a:a*5,tip:`× 5 is half of × 10. ${a} × 10 = ${fmt(a*10)}, halved: <b>${fmt(a*5)}</b>.`}},
+  x11(r){let a;do{a=ri(r,12,98)}while(a%10===0);const t=Math.floor(a/10),u=a%10,s=t+u;
+    return{q:`${a} × 11`,a:a*11,tip:s<10?`For a 2-digit number × 11, pull its digits apart and put their sum in the middle: ${t} _ ${u}, with ${t} + ${u} = ${s} in the gap → <b>${fmt(a*11)}</b>.`
+      :`For a 2-digit number × 11, pull its digits apart and put their sum in the middle. ${t} + ${u} = ${s}, so write ${s%10} in the gap and carry 1 onto the ${t}: <b>${fmt(a*11)}</b>.`}},
+  sq5(r){const n=ri(r,1,9),x=n*10+5;return{q:`${x}²`,a:x*x,tip:`To square a number ending in 5, take the digit before the 5 (${n}) and multiply it by one more than itself (${n+1}): ${n} × ${n+1} = ${n*(n+1)}. Then put 25 on the end: ${n*(n+1)} and 25 make <b>${fmt(x*x)}</b>.`}},
+  x25(r){const a=4*ri(r,4,99);return{q:`${a} × 25`,a:a*25,tip:`× 25 is the same as ÷ 4, then × 100. ${a} ÷ 4 = ${a/4} → <b>${fmt(a*25)}</b>.`}},
+  x99(r){const a=ri(r,12,89);return{q:`${a} × 99`,a:a*99,tip:`× 99 is × 100, minus one more ${a}. ${fmt(a*100)} − ${a} = <b>${fmt(a*99)}</b>.`}},
+  diff(r,L){const m=10*ri(r,2,9),k=ri(r,1,L===3?9:4);return{q:`${m-k} × ${m+k}`,a:m*m-k*k,tip:`Both numbers sit ${k} away from ${m}, so the product is ${m}² − ${k}². ${fmt(m*m)} − ${k*k} = <b>${fmt(m*m-k*k)}</b>.`}},
+  near(r){const b=pick(r,[50,100]),k=ri(r,1,4),s=pick(r,[-1,1]),n=b+s*k,sg=s<0?'−':'+';
+    return{q:`${n}²`,a:n*n,tip:`${n} is ${b} ${sg} ${k}. Square it in parts: ${b}² ${sg} 2 × ${b} × ${k} + ${k}² = ${fmt(b*b)} ${sg} ${fmt(2*b*k)} + ${k*k} = <b>${fmt(n*n)}</b>.`}},
+  x125(r){const a=8*ri(r,2,20);return{q:`${a} × 125`,a:a*125,tip:`× 125 is ÷ 8, then × 1,000. ${a} ÷ 8 = ${a/8} → <b>${fmt(a*125)}</b>.`}},
+};
+const SPECIAL_BY_LEVEL={1:['x5','x11','sq5'],2:['x25','diff','x99'],3:['near','x125','diff']};
+
+const GEN={
+  add(r,L){let a,b;do{if(L===1){a=ri(r,23,89);b=ri(r,14,79)}else if(L===2){a=ri(r,120,899);b=ri(r,23,89)}else{a=ri(r,140,899);b=ri(r,120,799)}}while(a%10+b%10<10);
+    return{cat:'Add',q:`${a} + ${b}`,a:a+b,tip:tipAdd(a,b)}},
+  sub(r,L){let a,b;do{if(L===1){a=ri(r,41,98);b=ri(r,13,a-10)}else if(L===2){a=ri(r,210,980);b=ri(r,23,99)}else{a=ri(r,410,990);b=ri(r,120,a-60)}}while(!(a%10<b%10));
+    return{cat:'Subtract',q:`${a} − ${b}`,a:a-b,tip:tipSub(a,b)}},
+  mul(r,L){let a,b;
+    if(L===3){do{a=ri(r,13,49);b=ri(r,13,39)}while(a%10===0||b%10===0);return{cat:'Multiply',q:`${a} × ${b}`,a:a*b,tip:tipMul(b,a,false)}}
+    do{a=L===1?ri(r,13,98):ri(r,112,989);b=ri(r,3,9)}while(a%10===0);
+    return{cat:'Multiply',q:`${a} × ${b}`,a:a*b,tip:tipMul(a,b,true)}},
+  div(r,L){let d,q;do{if(L===1){d=ri(r,3,9);q=ri(r,12,29)}else if(L===2){d=ri(r,3,9);q=ri(r,31,99)}else{d=ri(r,12,25);q=ri(r,12,39)}}while(q%10===0);
+    const n=d*q,T=q-q%10,o=q%10;
+    return{cat:'Divide',q:`${fmt(n)} ÷ ${d}`,a:q,tip:`Break ${fmt(n)} into ${fmt(T*d)} + ${fmt(o*d)}, both multiples of ${d}. ${fmt(T*d)} ÷ ${d} = ${T} and ${o*d} ÷ ${d} = ${o}. Together: <b>${q}</b>.`}},
+  pct(r,L){const p=+pick(r,Object.keys(PCT[L])),parts=PCT[L][p];
+    const req=[10,...parts].map(x=>100/gcd(x,100)).reduce(lcm,1);
+    const [lo,hi]={1:[40,400],2:[60,800],3:[80,900]}[L];
+    const B=req*ri(r,Math.ceil(lo/req),Math.floor(hi/req)),ans=p*B/100;
+    const uniq=[...new Set(parts)],vals=parts.map(x=>x*B/100);
+    let tip=uniq.map(x=>pctLine(x,B)).join('. ')+'. ';
+    tip+=parts.length>1?`${p}% = ${parts.map(x=>x+'%').join(' + ')}, so add them: ${vals.map(fmt).join(' + ')} = <b>${fmt(ans)}</b>.`:`That's the answer: <b>${fmt(ans)}</b>.`;
+    return{cat:'Percent',q:`${p}% of ${fmt(B)}`,a:ans,tip}},
+  special(r,L){const name=pick(r,SPECIAL_BY_LEVEL[L]);return{cat:'Shortcut',...SPECIAL[name](r,L)}},
+};
+
+function buildDaily(key){
+  const r=mulberry(hash('carry:'+key));
+  return [GEN.add(r,2),GEN.sub(r,2),GEN.mul(r,1),GEN.pct(r,2),GEN.special(r,ri(r,1,2)),r()<.5?GEN.mul(r,3):GEN.div(r,3)];
+}
+
+/* ---------- state ---------- */
+const CATS=[['mixed','Mixed'],['add','Add'],['sub','Subtract'],['mul','Multiply'],['div','Divide'],['pct','Percent'],['special','Shortcuts']];
+const LEVELS=[[1,'Warm-up'],[2,'Steady'],[3,'Stretch']];
+const S={mode:'daily',input:'',view:0,daily:null,overlay:null,reveal:null,shake:false,msg:'',copied:'',
+  practice:{cat:'mixed',level:1,round:null,t0:0,sess:{n:0,first:0,streak:0,time:0}}};
+
+function newRound(p){return{p,guesses:[],status:'play'}}
+function loadDaily(){
+  const key=todayKey();
+  let d=db.daily&&db.daily.key===key?db.daily:null;
+  if(!d){d={key,rounds:buildDaily(key).map(newRound),idx:0,elapsed:0,started:false,done:false};db.daily=d;save()}
+  S.daily=d;S.view=d.idx;S.input='';S.msg='';
+}
+function newPractice(){
+  const P=S.practice,cat=P.cat==='mixed'?pick(Math.random,['add','sub','mul','div','pct','special']):P.cat;
+  P.round=newRound(GEN[cat](Math.random,P.level));P.t0=Date.now();S.input='';S.msg='';
+}
+
+/* ---------- scoring ---------- */
+function grade(g,a){
+  const res=Array(g.length).fill('miss'),left={};
+  for(let i=0;i<g.length;i++){if(g[i]===a[i])res[i]='hit';else left[a[i]]=(left[a[i]]||0)+1}
+  for(let i=0;i<g.length;i++){if(res[i]!=='hit'&&left[g[i]]>0){res[i]='near';left[g[i]]--}}
+  return res;
+}
+const MARK={1:'🟩',2:'🟨',3:'🟧',x:'🟥'};
+const tries=R=>R.status==='won'?R.guesses.length:'x';
+const points=R=>R.status==='won'?4-R.guesses.length:0;
+
+function streaks(){
+  const keys=Object.keys(db.history).sort();let max=0,run=0,prev=null;
+  for(const k of keys){run=prev&&dayNum(k)-dayNum(prev)===1?run+1:1;max=Math.max(max,run);prev=k}
+  const cur=prev&&dayNum(todayKey())-dayNum(prev)<=1?run:0;
+  return{cur,max,played:keys.length};
+}
+
+/* ---------- actions ---------- */
+function activeRound(){return S.mode==='daily'?S.daily.rounds[S.view]:S.practice.round}
+
+function press(k){
+  if(S.overlay)return;
+  if(S.mode==='daily'){
+    const d=S.daily;
+    if(d.done&&k!=='enter')return;
+    if(S.view!==d.idx){S.view=d.idx}
+  }
+  const R=activeRound();
+  if(R.status!=='play'){if(k==='enter')next();render();return}
+  const len=String(R.p.a).length;
+  if(/^\d$/.test(k)){
+    if(S.input.length<len){S.input+=k;S.msg=''}
+    if(S.mode==='daily'&&!S.daily.started){S.daily.started=true;save()}
+  }else if(k==='back'){S.input=S.input.slice(0,-1)}
+  else if(k==='enter'){submit(R,len)}
+  render();
+}
+
+function submit(R,len){
+  if(S.input.length<len){S.msg=`The answer has ${len} digit${len>1?'s':''}.`;S.shake=true;return}
+  const g=S.input,ans=R.p.a;R.guesses.push(g);S.input='';
+  S.reveal={round:R,row:R.guesses.length-1};
+  if(+g===ans){R.status='won';S.msg=['Clean. First try.','Got it on the second try.','Got it on the last try.'][R.guesses.length-1]}
+  else if(R.guesses.length>=3){R.status='lost';S.msg=`The answer was <strong>${fmt(ans)}</strong>.`}
+  else{S.msg=+g<ans?'Too low. Go higher.':'Too high. Go lower.'}
+  if(R.status!=='play')finish(R);
+  if(S.mode==='daily')save();
+}
+
+function finish(R){
+  if(S.mode==='daily'){
+    const d=S.daily;
+    if(d.idx===5){
+      d.done=true;
+      const score=d.rounds.reduce((s,x)=>s+points(x),0);
+      db.history[d.key]={score,time:d.elapsed,marks:d.rounds.map(x=>MARK[tries(x)]).join(''),clean:d.rounds.filter(x=>tries(x)===1).length};
+    }
+  }else{
+    const s=S.practice.sess;s.n++;s.time+=Math.round((Date.now()-S.practice.t0)/1000);
+    if(R.status==='won'&&R.guesses.length===1)s.first++;
+    s.streak=R.status==='won'?s.streak+1:0;
+    db.bestStreak=Math.max(db.bestStreak||0,s.streak);save();
+  }
+}
+
+function next(){
+  if(S.mode==='daily'){const d=S.daily;if(!d.done&&d.idx<5){d.idx++;S.view=d.idx;S.msg='';save()}}
+  else newPractice();
+}
+
+/* ---------- rendering ---------- */
+const app=document.getElementById('app');
+
+function tilesRow(R,i,isLive){
+  const ans=String(R.p.a),len=ans.length,g=R.guesses[i];
+  const flip=S.reveal&&S.reveal.round===R&&S.reveal.row===i;
+  if(g!==undefined){
+    const res=grade(g,ans),diff=+g-R.p.a;
+    const dir=diff===0?'<span class="dir" aria-label="correct"><b>✓</b></span>':`<span class="dir" aria-label="${diff<0?'too low':'too high'}"><b>${diff<0?'↑':'↓'}</b>${diff<0?'low':'high'}</span>`;
+    return `<div class="row${flip?' flip':''}"><span class="dir"></span>${[...g].map((c,j)=>`<span class="tile ${res[j]}" style="animation-delay:${j*90}ms">${c}</span>`).join('')}${dir}</div>`;
+  }
+  const typed=isLive?S.input:'';
+  const cls=isLive&&S.shake?' shake':'';
+  return `<div class="row${cls}"><span class="dir"></span>${Array.from({length:len},(_,j)=>`<span class="tile${typed[j]?' typed':''}">${typed[j]||''}</span>`).join('')}<span class="dir"></span></div>`;
+}
+
+function sheet(R,{label,clock,isCurrent,nextLabel}){
+  const fin=R.status!=='play';
+  const rows=[0,1,2].map(i=>tilesRow(R,i,isCurrent&&!fin&&i===R.guesses.length)).join('');
+  const ansHtml=fin?`<span class="ans${R.status==='lost'?' lost':''}">${fmt(R.p.a)}</span>`:'?';
+  return `<section class="sheet" aria-label="Current problem">
+    <div class="eyebrow"><span>${label}</span>${clock!=null?`<span class="clock" id="clock">${clock}</span>`:''}</div>
+    <div class="expr">${R.p.q} <span class="eq">=</span> ${ansHtml}</div>
+    <div class="rows">${rows}</div>
+    <div class="msg" aria-live="polite">${isCurrent?S.msg:''}</div>
+    ${fin?`<div class="tip"><h3>The shortcut</h3><p>${R.p.tip}</p>${nextLabel?`<button class="primary" data-act="next">${nextLabel}</button>`:''}</div>`:''}
+  </section>`;
+}
+
+function keypad(R){
+  const st={};
+  if(R&&R.status==='play'){const a=String(R.p.a);const rank={hit:3,near:2,miss:1};
+    R.guesses.forEach(g=>grade(g,a).forEach((v,i)=>{const c=g[i];if(!st[c]||rank[v]>rank[st[c]])st[c]=v}))}
+  const k=d=>`<button class="key ${st[d]||''}" data-key="${d}" aria-label="${d}">${d}</button>`;
+  return `<div class="keypad" role="group" aria-label="Number pad">${[1,2,3,4,5,6,7,8,9].map(k).join('')}
+    <button class="key wide" data-key="back" aria-label="Delete">⌫ Delete</button>${k(0)}
+    <button class="key wide enter" data-key="enter">Enter</button></div>`;
+}
+
+function doneCard(){
+  const d=S.daily,h=db.history[d.key];if(!h)return'';
+  const st=streaks();
+  const now=new Date(),mid=new Date(now);mid.setHours(24,0,0,0);const left=Math.max(0,Math.floor((mid-now)/1000));
+  const hh=Math.floor(left/3600),mm=Math.floor(left%3600/60);
+  return `<section class="sheet done" aria-label="Today's result">
+    <div class="eyebrow"><span>No. ${puzzleNo(d.key)} complete</span><span>Next in ${hh}h ${String(mm).padStart(2,'0')}m</span></div>
+    <div class="big"><span class="score">${h.score}<small>/18</small></span><span class="marks">${h.marks}</span></div>
+    <div class="facts"><span>Time <b>${mmss(h.time)}</b></span><span>First-try <b>${h.clean}/6</b></span><span>Streak <b>${st.cur}</b></span></div>
+    <div class="btnrow"><button class="primary" data-act="share">${S.copied==='ok'?'Copied':'Copy result'}</button><button class="ghost" data-act="mode" data-mode="practice">Keep practicing</button></div>
+    ${S.copied==='fail'?`<textarea class="copyfallback" id="copyfallback" rows="2" readonly>${shareText()}</textarea>`:''}
+  </section>`;
+}
+function shareText(){const d=S.daily,h=db.history[d.key];return `Carry the One No. ${puzzleNo(d.key)}  ${h.score}/18  ${mmss(h.time)}\n${h.marks}`}
+
+function renderDaily(){
+  const d=S.daily,R=d.rounds[S.view],isCurrent=S.view===d.idx&&!d.done;
+  const ladder=`<ol class="ladder" aria-label="Today's six problems">${d.rounds.map((x,i)=>{
+    const t=x.status==='play'?'':' r'+tries(x);
+    const cls=(i===d.idx&&!d.done?' cur':'')+(i===S.view?' viewing':'')+t;
+    const can=x.status!=='play'||i===d.idx;
+    return `<li><button class="${cls.trim()}" data-act="view" data-i="${i}" ${can?'':'disabled'} aria-label="Problem ${i+1}, ${x.p.cat}"><span class="n">${i+1}</span><span class="c">${x.p.cat}</span></button></li>`}).join('')}</ol>`;
+  const label=`Problem ${S.view+1} / 6 · ${R.p.cat}`;
+  const nextLabel=S.view===d.idx&&!d.done&&R.status!=='play'?'Next problem':(d.done||S.view!==d.idx?null:null);
+  const backLabel=S.view!==d.idx&&!d.done?'Back to current problem':null;
+  return (d.done?doneCard():'')+ladder+sheet(R,{label,clock:mmss(d.elapsed),isCurrent,nextLabel:nextLabel||backLabel})+(d.done?'':keypad(isCurrent?R:d.rounds[d.idx]));
+}
+
+function renderPractice(){
+  const P=S.practice,R=P.round,s=P.sess;
+  const avg=s.n?(s.time/s.n).toFixed(1)+'s':'–';
+  return `<div class="controls">
+    <div class="chips" role="group" aria-label="Topic">${CATS.map(([v,l])=>`<button class="chip" data-act="cat" data-v="${v}" aria-pressed="${P.cat===v}">${l}</button>`).join('')}</div>
+    <div class="levels" role="group" aria-label="Difficulty">${LEVELS.map(([v,l])=>`<button class="chip" data-act="level" data-v="${v}" aria-pressed="${P.level===v}">${l}</button>`).join('')}</div>
+  </div>
+  <div class="sess"><div><b>${s.n}</b><span>Done</span></div><div><b>${s.n?Math.round(s.first/s.n*100)+'%':'–'}</b><span>First try</span></div><div><b>${s.streak}</b><span>Streak</span></div><div><b>${avg}</b><span>Avg time</span></div></div>`
+  + sheet(R,{label:`Practice · ${R.p.cat} · ${LEVELS[P.level-1][1]}`,clock:null,isCurrent:true,nextLabel:'Next problem'})
+  + keypad(R);
+}
+
+function overlayHtml(){
+  if(S.overlay==='help')return `<div class="overlay" data-act="close"><div class="panel" role="dialog" aria-modal="true" aria-labelledby="ht">
+    <div class="head"><h2 id="ht">How to play</h2><button class="ghost" data-act="close">Close</button></div>
+    <p>Six problems a day, getting harder as you go. Solve each one in your head. You get three tries per problem, and the tiles tell you how close you were.</p>
+    <div class="legend">
+      <div class="row"><span class="tile hit">4</span><small>Right digit in the right place value.</small></div>
+      <div class="row"><span class="tile near">7</span><small>That digit is in the answer, in another place.</small></div>
+      <div class="row"><span class="tile miss">2</span><small>That digit isn't in the answer.</small></div>
+      <div class="row"><span class="dir"><b>↑</b>low</span><small>Your guess was too low (↓ means too high).</small></div>
+    </div>
+    <p>The number of empty tiles tells you how many digits the answer has, which is a good sanity check on your estimate.</p>
+    <p>After each problem you'll see a shortcut for doing it faster in your head. Practice mode lets you drill one topic at three difficulty levels.</p>
+    <h4>Scoring</h4>
+    <ul><li>🟩 first try: 3 points</li><li>🟨 second try: 2 points</li><li>🟧 third try: 1 point</li><li>🟥 missed: 0 points</li></ul>
+  </div></div>`;
+  if(S.overlay==='stats'){
+    const st=streaks(),hs=Object.values(db.history);
+    const avg=hs.length?(hs.reduce((a,h)=>a+h.score,0)/hs.length).toFixed(1):'–';
+    const dist=[0,1,2,3,4,5,6].map(n=>hs.filter(h=>h.clean===n).length),max=Math.max(1,...dist);
+    const todayClean=db.history[todayKey()]?.clean;
+    return `<div class="overlay" data-act="close"><div class="panel" role="dialog" aria-modal="true" aria-labelledby="st">
+      <div class="head"><h2 id="st">Statistics</h2><button class="ghost" data-act="close">Close</button></div>
+      <div class="statgrid"><div><b>${st.played}</b><span>Played</span></div><div><b>${avg}</b><span>Avg score</span></div><div><b>${st.cur}</b><span>Current streak</span></div><div><b>${st.max}</b><span>Best streak</span></div></div>
+      <h4>First-try solves per day</h4>
+      <div class="dist">${dist.map((c,n)=>`<div class="bar"><span>${n}</span><span class="fill${todayClean===n?' today':''}" style="--w:${Math.max(6,c/max*100)}%">${c}</span></div>`).join('')}</div>
+      <p style="color:var(--muted);font-size:13px">Best practice streak: ${db.bestStreak||0}. Stats are saved in this browser only.</p>
+    </div></div>`;
+  }
+  return '';
+}
+
+function render(){
+  const dateStr=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  app.innerHTML=`<header>
+      <div><h1>Carry the <span class="one">One<sup>1</sup></span></h1><div class="meta">No. ${puzzleNo(S.daily.key)} · ${dateStr}</div></div>
+      <div class="hbtns"><button class="ghost" data-act="open" data-o="stats">Stats</button><button class="ghost" data-act="open" data-o="help" aria-label="How to play">?</button></div>
+    </header>
+    <nav class="modes" aria-label="Mode"><button data-act="mode" data-mode="daily" aria-pressed="${S.mode==='daily'}">Daily six</button><button data-act="mode" data-mode="practice" aria-pressed="${S.mode==='practice'}">Practice</button></nav>
+    ${S.mode==='daily'?renderDaily():renderPractice()}
+    ${overlayHtml()}`;
+  S.reveal=null;S.shake=false;
+  const fb=document.getElementById('copyfallback');if(fb){fb.focus();fb.select()}
+}
+
+/* ---------- events ---------- */
+app.addEventListener('click',e=>{
+  const key=e.target.closest('[data-key]');
+  if(key){press(key.dataset.key);return}
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act;
+  if(act==='close'){if(e.target===el||el.tagName==='BUTTON'){S.overlay=null;render()}return}
+  if(act==='open'){S.overlay=el.dataset.o}
+  else if(act==='mode'){S.mode=el.dataset.mode;S.input='';S.msg='';if(S.mode==='practice'&&!S.practice.round)newPractice()}
+  else if(act==='view'){S.view=+el.dataset.i;S.input=S.view===S.daily.idx?S.input:'';}
+  else if(act==='next'){if(S.mode==='daily'&&S.view!==S.daily.idx){S.view=S.daily.idx}else next()}
+  else if(act==='cat'){S.practice.cat=el.dataset.v;newPractice()}
+  else if(act==='level'){S.practice.level=+el.dataset.v;newPractice()}
+  else if(act==='share'){
+    const t=shareText();
+    try{navigator.clipboard.writeText(t).then(()=>{S.copied='ok';render()},()=>{S.copied='fail';render()})}catch(err){S.copied='fail'}
+  }
+  render();
+});
+document.addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if(S.overlay){if(e.key==='Escape'){S.overlay=null;render()}return}
+  if(/^\d$/.test(e.key)){press(e.key);e.preventDefault()}
+  else if(e.key==='Backspace'){press('back');e.preventDefault()}
+  else if(e.key==='Enter'){if(document.activeElement&&document.activeElement.tagName==='BUTTON'&&!document.activeElement.dataset.key)return;press('enter');e.preventDefault()}
+});
+setInterval(()=>{
+  if(todayKey()!==S.daily.key){loadDaily();render();return}
+  const d=S.daily;
+  if(S.mode==='daily'&&d.started&&!d.done&&!S.overlay&&document.visibilityState==='visible'){
+    d.elapsed++;save();const c=document.getElementById('clock');if(c)c.textContent=mmss(d.elapsed);
+  }
+},1000);
+
+loadDaily();
+if(!Object.keys(db.history).length&&!S.daily.started)S.overlay=null;
+render();
+})();
+</script>
+
+</body>
+</html>
