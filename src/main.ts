@@ -1,5 +1,6 @@
 // @ts-nocheck -- temporary: the code isn't typed yet. Remove this line in step 7 when adding types.
 import './styles.css';
+import { hash, mulberry32, pick, randInt } from './model/rng';
 
 /* ---------- utilities ---------- */
 const KEY = 'carry-the-one.v1';
@@ -7,25 +8,6 @@ const fmt = (n) => n.toLocaleString('en-US');
 const gcd = (a, b) => (b ? gcd(b, a % b) : a);
 const lcm = (a, b) => (a / gcd(a, b)) * b;
 const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-function hash(str) {
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return h >>> 0;
-}
-function mulberry(a) {
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const ri = (r, a, b) => a + Math.floor(r() * (b - a + 1));
-const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
 function todayKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -115,7 +97,7 @@ function pctLine(p, B) {
 
 const SPECIAL = {
   x5(r) {
-    const a = ri(r, 12, 249) * 2;
+    const a = randInt(r, 12, 249) * 2;
     return {
       q: `${a} × 5`,
       a: a * 5,
@@ -125,7 +107,7 @@ const SPECIAL = {
   x11(r) {
     let a;
     do {
-      a = ri(r, 12, 98);
+      a = randInt(r, 12, 98);
     } while (a % 10 === 0);
     const t = Math.floor(a / 10),
       u = a % 10,
@@ -140,7 +122,7 @@ const SPECIAL = {
     };
   },
   sq5(r) {
-    const n = ri(r, 1, 9),
+    const n = randInt(r, 1, 9),
       x = n * 10 + 5;
     return {
       q: `${x}²`,
@@ -149,15 +131,15 @@ const SPECIAL = {
     };
   },
   x25(r) {
-    const a = 4 * ri(r, 4, 99);
+    const a = 4 * randInt(r, 4, 99);
     return {
       q: `${a} × 25`,
       a: a * 25,
-      tip: `× 25 is the same as ÷ 4, then × 100. ${a} ÷ 4 = ${a / 4} → <b>${fmt(a * 25)}</b>.`,
+      tip: `× 25 is the same as ÷ 4, then × 100. ${a} ÷ 4 = ${a / 4}, and ${a / 4} × 100 = <b>${fmt(a * 25)}</b>.`,
     };
   },
   x99(r) {
-    const a = ri(r, 12, 89);
+    const a = randInt(r, 12, 89);
     return {
       q: `${a} × 99`,
       a: a * 99,
@@ -165,8 +147,8 @@ const SPECIAL = {
     };
   },
   diff(r, L) {
-    const m = 10 * ri(r, 2, 9),
-      k = ri(r, 1, L === 3 ? 9 : 4);
+    const m = 10 * randInt(r, 2, 9),
+      k = randInt(r, 1, L === 3 ? 9 : 4);
     return {
       q: `${m - k} × ${m + k}`,
       a: m * m - k * k,
@@ -175,7 +157,7 @@ const SPECIAL = {
   },
   near(r) {
     const b = pick(r, [50, 100]),
-      k = ri(r, 1, 4),
+      k = randInt(r, 1, 4),
       s = pick(r, [-1, 1]),
       n = b + s * k,
       sg = s < 0 ? '−' : '+';
@@ -186,11 +168,11 @@ const SPECIAL = {
     };
   },
   x125(r) {
-    const a = 8 * ri(r, 2, 20);
+    const a = 8 * randInt(r, 2, 20);
     return {
       q: `${a} × 125`,
       a: a * 125,
-      tip: `× 125 is ÷ 8, then × 1,000. ${a} ÷ 8 = ${a / 8} → <b>${fmt(a * 125)}</b>.`,
+      tip: `× 125 is ÷ 8, then × 1,000. ${a} ÷ 8 = ${a / 8}, and ${a / 8} × 1,000 = <b>${fmt(a * 125)}</b>.`,
     };
   },
 };
@@ -205,14 +187,14 @@ const GEN = {
     let a, b;
     do {
       if (L === 1) {
-        a = ri(r, 23, 89);
-        b = ri(r, 14, 79);
+        a = randInt(r, 23, 89);
+        b = randInt(r, 14, 79);
       } else if (L === 2) {
-        a = ri(r, 120, 899);
-        b = ri(r, 23, 89);
+        a = randInt(r, 120, 899);
+        b = randInt(r, 23, 89);
       } else {
-        a = ri(r, 140, 899);
-        b = ri(r, 120, 799);
+        a = randInt(r, 140, 899);
+        b = randInt(r, 120, 799);
       }
     } while ((a % 10) + (b % 10) < 10);
     return { cat: 'Add', q: `${a} + ${b}`, a: a + b, tip: tipAdd(a, b) };
@@ -221,14 +203,14 @@ const GEN = {
     let a, b;
     do {
       if (L === 1) {
-        a = ri(r, 41, 98);
-        b = ri(r, 13, a - 10);
+        a = randInt(r, 41, 98);
+        b = randInt(r, 13, a - 10);
       } else if (L === 2) {
-        a = ri(r, 210, 980);
-        b = ri(r, 23, 99);
+        a = randInt(r, 210, 980);
+        b = randInt(r, 23, 99);
       } else {
-        a = ri(r, 410, 990);
-        b = ri(r, 120, a - 60);
+        a = randInt(r, 410, 990);
+        b = randInt(r, 120, a - 60);
       }
     } while (!(a % 10 < b % 10));
     return { cat: 'Subtract', q: `${a} − ${b}`, a: a - b, tip: tipSub(a, b) };
@@ -237,14 +219,14 @@ const GEN = {
     let a, b;
     if (L === 3) {
       do {
-        a = ri(r, 13, 49);
-        b = ri(r, 13, 39);
+        a = randInt(r, 13, 49);
+        b = randInt(r, 13, 39);
       } while (a % 10 === 0 || b % 10 === 0);
       return { cat: 'Multiply', q: `${a} × ${b}`, a: a * b, tip: tipMul(b, a, false) };
     }
     do {
-      a = L === 1 ? ri(r, 13, 98) : ri(r, 112, 989);
-      b = ri(r, 3, 9);
+      a = L === 1 ? randInt(r, 13, 98) : randInt(r, 112, 989);
+      b = randInt(r, 3, 9);
     } while (a % 10 === 0);
     return { cat: 'Multiply', q: `${a} × ${b}`, a: a * b, tip: tipMul(a, b, true) };
   },
@@ -252,14 +234,14 @@ const GEN = {
     let d, q;
     do {
       if (L === 1) {
-        d = ri(r, 3, 9);
-        q = ri(r, 12, 29);
+        d = randInt(r, 3, 9);
+        q = randInt(r, 12, 29);
       } else if (L === 2) {
-        d = ri(r, 3, 9);
-        q = ri(r, 31, 99);
+        d = randInt(r, 3, 9);
+        q = randInt(r, 31, 99);
       } else {
-        d = ri(r, 12, 25);
-        q = ri(r, 12, 39);
+        d = randInt(r, 12, 25);
+        q = randInt(r, 12, 39);
       }
     } while (q % 10 === 0);
     const n = d * q,
@@ -277,7 +259,7 @@ const GEN = {
       parts = PCT[L][p];
     const req = [10, ...parts].map((x) => 100 / gcd(x, 100)).reduce(lcm, 1);
     const [lo, hi] = { 1: [40, 400], 2: [60, 800], 3: [80, 900] }[L];
-    const B = req * ri(r, Math.ceil(lo / req), Math.floor(hi / req)),
+    const B = req * randInt(r, Math.ceil(lo / req), Math.floor(hi / req)),
       ans = (p * B) / 100;
     const uniq = [...new Set(parts)],
       vals = parts.map((x) => (x * B) / 100);
@@ -295,13 +277,13 @@ const GEN = {
 };
 
 function buildDaily(key) {
-  const r = mulberry(hash('carry:' + key));
+  const r = mulberry32(hash('carry:' + key));
   return [
     GEN.add(r, 2),
     GEN.sub(r, 2),
     GEN.mul(r, 1),
     GEN.pct(r, 2),
-    GEN.special(r, ri(r, 1, 2)),
+    GEN.special(r, randInt(r, 1, 2)),
     r() < 0.5 ? GEN.mul(r, 3) : GEN.div(r, 3),
   ];
 }
