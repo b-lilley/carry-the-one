@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    // Language level of the output. ES2022 is supported by all modern browsers.
+    "target": "ES2022",
+    // Use native `import`/`export`, and resolve them the way Vite (a bundler) does.
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    // Built-in type definitions: modern JavaScript, plus browser APIs (document, localStorage, ...).
+    "lib": ["ES2022", "DOM"],
+    // Vite's types, so imports like `import './styles.css'` type-check.
+    "types": ["vite/client"],
+
+    // Turn on all strict type checks (null checks, no implicit `any`, ...).
+    "strict": true,
+    // Only type-check. Vite does the actual compiling and bundling.
+    "noEmit": true,
+    // Don't type-check the .d.ts files inside node_modules (faster, avoids errors in other people's code).
+    "skipLibCheck": true
+  },
+  // Which files TypeScript checks.
+  "include": ["src", "tests"]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "carry-the-one",
+  "version": "1.0.0",
+  "description": "A daily mental math puzzle in the spirit of Wordle.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/b-lilley/carry-the-one.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/b-lilley/carry-the-one/issues"
+  },
+  "homepage": "https://github.com/b-lilley/carry-the-one#readme",
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
+  }
+}
