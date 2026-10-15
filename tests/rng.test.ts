@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { hash, mulberry32, pick, randInt } from '../src/model/rng';
 
 describe('hash', () => {
-  it('returns the same number for the same string', () => {
-    expect(hash('carry:2026-01-01')).toBe(hash('carry:2026-01-01'));
+  it('returns the same value it always has', () => {
+    expect(hash('carry:2026-01-01')).toBe(3427237241);
   });
 
-  it('returns different numbers for different dates', () => {
-    expect(hash('carry:2026-01-01')).not.toBe(hash('carry:2026-01-02'));
+  it('returns a different number for every day of the year', () => {
+    const values = new Set<number>();
+    for (let day = 1; day <= 365; day++) {
+      values.add(hash(`carry:day-${day}`));
+    }
+    expect(values.size).toBe(365);
   });
 });
 
